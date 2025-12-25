@@ -203,12 +203,9 @@ void Z3Tests::test4()
     addToSolver(p == getMemObjAddress("malloc"));
     
     // x = &p[0];
-    // p is a pointer to the heap object. x should equal p.
-    // We use pointer arithmetic here because p holds the address.
     addToSolver(x == p);
     
     // y = &p[1];
-    // y should be the next address.
     addToSolver(y == p + 1);
     
     // *x = 10;
@@ -247,19 +244,16 @@ int main(int argv) {
 */
 void Z3Tests::test5()
 {
-    // C: main(int argv) -> argv is defined first
     expr argv = getZ3Expr("argv");
     expr a = getZ3Expr("a");
-    // b is updated, so we use 'b' to represent its value AFTER the conditional
-    // to match the likely output format of displaying the variable's final state.
     expr b = getZ3Expr("b");
     expr b1 = getZ3Expr("b1");
 
     // a = argv + 1;
     addToSolver(a == argv + 1);
     
+    // b = 5; (initial value logic)
     // if(a > 10) b = a; else b = 5;
-    // We model 'b' as the result of the merge.
     addToSolver(b == ite(a > 10, a, ctx.int_val(5)));
     
     // b1 = b;
@@ -368,19 +362,22 @@ void Z3Tests::test7()
  */
 void Z3Tests::test8()
 {
-    // Note: Do NOT use getMemObjAddress("arr") here.
-    // getMemObjAddress replaces the variable "arr" with a constant address value.
-    // getGepObjAddress requires the name "arr" to be present in strToIDMap as a variable reference.
-    // So we just use getZ3Expr("arr") to get the variable, and let getGepObjAddress assign IDs/Addresses relative to it.
+    // Step 1: Capture the array variable
     expr arr = getZ3Expr("arr");
     expr a = getZ3Expr("a");
     expr p = getZ3Expr("p");
 
-    // int arr[2] = {0, 1};
-    // Get addresses for arr[0] and arr[1] based on the 'arr' object ID
+    // Step 2: Calculate GEP addresses BEFORE converting arr to a constant address
+    // This works because arr is still a named variable "arr" in the map here.
     expr addr0 = getGepObjAddress(arr, 0);
     expr addr1 = getGepObjAddress(arr, 1);
     
+    // Step 3: Constrain 'arr' to be the physical address.
+    // getMemObjAddress("arr") assigns the address constant to the name "arr".
+    // We bind our 'arr' variable to this address so that addr0 (which is 'arr') becomes a valid address.
+    addToSolver(arr == getMemObjAddress("arr"));
+
+    // Now we can safely store
     storeValue(addr0, ctx.int_val(0));
     storeValue(addr1, ctx.int_val(1));
     
@@ -430,23 +427,37 @@ void Z3Tests::test9()
     expr y = getZ3Expr("y");
     expr z = getZ3Expr("z");
 
-    // p = malloc1; x = malloc2;
-    addToSolver(p == getMemObjAddress("malloc1"));
+    // We must handle 'malloc1' carefully to avoid address collision with 'malloc2'
+    // when accessing field f1 (offset 1).
+    // Use the same pattern as test8:
+    
+    // 1. Get the object variable
+    expr m1 = getZ3Expr("malloc1");
+    
+    // 2. Get safe GEP addresses (which will be far away from malloc2 ID)
+    expr f0 = getGepObjAddress(m1, 0);
+    expr f1 = getGepObjAddress(m1, 1);
+    
+    // 3. Constrain m1 to its address
+    addToSolver(m1 == getMemObjAddress("malloc1"));
+
+    // p = malloc1
+    addToSolver(p == m1);
+    
+    // x = malloc2
     addToSolver(x == getMemObjAddress("malloc2"));
     
     // *x = 5;
     storeValue(x, ctx.int_val(5));
     
-    // q = &(p->f0); 
-    // p is a pointer (Address(malloc1)). &(p->f0) is p + 0.
-    addToSolver(q == p);
+    // q = &(p->f0) -> q = f0
+    addToSolver(q == f0);
     
     // *q = 10;
     storeValue(q, ctx.int_val(10));
     
-    // r = &(p->f1); 
-    // &(p->f1) is p + 1.
-    addToSolver(r == p + 1);
+    // r = &(p->f1) -> r = f1
+    addToSolver(r == f1);
     
     // *r = x;
     storeValue(r, x);
@@ -455,9 +466,6 @@ void Z3Tests::test9()
     addToSolver(y == loadValue(r));
     
     // z = *q + *y;
-    // q points to f0 (val 10). y points to what r points to (x, which points to 5).
-    // Note: y IS the pointer read from r. So y == x.
-    // *y means reading from y.
     addToSolver(z == loadValue(q) + loadValue(y));
     
     // assert(z == 15);

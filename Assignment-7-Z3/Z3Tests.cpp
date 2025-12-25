@@ -65,7 +65,6 @@ void Z3Tests::test0()
 */
 void Z3Tests::test1()
 {
-    /// TODO: your code starts from here
     expr a = getZ3Expr("a");
     expr b = getZ3Expr("b");
     
@@ -98,7 +97,6 @@ void Z3Tests::test1()
 */
 void Z3Tests::test2()
 {
-    /// TODO: your code starts from here
     expr p = getZ3Expr("p");
     expr q = getZ3Expr("q");
     expr b = getZ3Expr("b");
@@ -107,13 +105,15 @@ void Z3Tests::test2()
     addToSolver(p == getMemObjAddress("malloc"));
     
     // *p = 0;
-    storeValue(p, 0);
+    // FIX: Convert 0 to z3 expression
+    storeValue(p, ctx.int_val(0));
     
     // q = *p;
     addToSolver(q == loadValue(p));
     
     // *p = 3;
-    storeValue(p, 3);
+    // FIX: Convert 3 to z3 expression
+    storeValue(p, ctx.int_val(3));
     
     // b = *p + 1;
     addToSolver(b == loadValue(p) + 1);
@@ -145,7 +145,6 @@ void Z3Tests::test2()
 */
 void Z3Tests::test3()
 {
-    /// TODO: your code starts from here
     expr p = getZ3Expr("p");
     expr q = getZ3Expr("q");
     expr r = getZ3Expr("r");
@@ -160,7 +159,8 @@ void Z3Tests::test3()
     storeValue(p, q);
     
     // *q = 10;
-    storeValue(q, 10);
+    // FIX: Convert 10 to z3 expression
+    storeValue(q, ctx.int_val(10));
     
     // r = *p;
     addToSolver(r == loadValue(p));
@@ -196,7 +196,6 @@ void Z3Tests::test3()
 */
 void Z3Tests::test4()
 {
-    /// TODO: your code starts from here
     expr p = getZ3Expr("p");
     expr x = getZ3Expr("x");
     expr y = getZ3Expr("y");
@@ -213,10 +212,12 @@ void Z3Tests::test4()
     addToSolver(y == getGepObjAddress(p, 1));
     
     // *x = 10;
-    storeValue(x, 10);
+    // FIX: Convert 10 to z3 expression
+    storeValue(x, ctx.int_val(10));
     
     // *y = 11;
-    storeValue(y, 11);
+    // FIX: Convert 11 to z3 expression
+    storeValue(y, ctx.int_val(11));
     
     // a = *x;
     addToSolver(a == loadValue(x));
@@ -248,7 +249,6 @@ int main(int argv) {
 */
 void Z3Tests::test5()
 {
-    /// TODO: your code starts from here
     expr a = getZ3Expr("a");
     expr b = getZ3Expr("b");   // Represents initial b
     expr b1 = getZ3Expr("b1"); // Represents final b
@@ -292,7 +292,6 @@ int main() {
 */
 void Z3Tests::test6()
 {
-    /// TODO: your code starts from here
     expr a = getZ3Expr("a");
     expr b = getZ3Expr("b");
     expr p = getZ3Expr("p");
@@ -303,9 +302,11 @@ void Z3Tests::test6()
     addToSolver(b == getMemObjAddress("malloc2"));
     
     // *a = 5;
-    storeValue(a, 5);
+    // FIX: Convert 5 to z3 expression
+    storeValue(a, ctx.int_val(5));
     // *b = 10;
-    storeValue(b, 10);
+    // FIX: Convert 10 to z3 expression
+    storeValue(b, ctx.int_val(10));
     
     // Condition: *a < *b
     expr cond = loadValue(a) < loadValue(b);
@@ -335,7 +336,6 @@ void Z3Tests::test6()
  */
 void Z3Tests::test7()
 {
-    /// TODO: your code starts from here
     expr a = getZ3Expr("a");
     expr b = getZ3Expr("b");
     expr c = getZ3Expr("c");
@@ -372,15 +372,15 @@ void Z3Tests::test7()
  */
 void Z3Tests::test8()
 {
-    /// TODO: your code starts from here
     // Model 'arr' as a memory object
     expr arr = getMemObjAddress("arr");
     expr a = getZ3Expr("a");
     expr p = getZ3Expr("p");
 
     // int arr[2] = {0, 1};
-    storeValue(getGepObjAddress(arr, 0), 0);
-    storeValue(getGepObjAddress(arr, 1), 1);
+    // FIX: Convert values to z3 expression
+    storeValue(getGepObjAddress(arr, 0), ctx.int_val(0));
+    storeValue(getGepObjAddress(arr, 1), ctx.int_val(1));
     
     // int a = 10;
     addToSolver(a == 10);
@@ -423,7 +423,6 @@ void Z3Tests::test8()
 */
 void Z3Tests::test9()
 {
-    /// TODO: your code starts from here
     expr p = getZ3Expr("p");
     expr x = getZ3Expr("x");
     expr q = getZ3Expr("q");
@@ -436,13 +435,15 @@ void Z3Tests::test9()
     addToSolver(x == getMemObjAddress("malloc2"));
     
     // *x = 5;
-    storeValue(x, 5);
+    // FIX: Convert 5 to z3 expression
+    storeValue(x, ctx.int_val(5));
     
     // q = &(p->f0);  (Offset 0)
     addToSolver(q == getGepObjAddress(p, 0));
     
     // *q = 10;
-    storeValue(q, 10);
+    // FIX: Convert 10 to z3 expression
+    storeValue(q, ctx.int_val(10));
     
     // r = &(p->f1); (Offset 1, assuming fields are int sized slots in this abstract model)
     addToSolver(r == getGepObjAddress(p, 1));
@@ -479,7 +480,6 @@ int main() {
 */
 void Z3Tests::test10()
 {
-    /// TODO: your code starts from here
     expr x = getZ3Expr("x");
     expr y = getZ3Expr("y");
     

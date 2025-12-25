@@ -66,7 +66,19 @@ void Z3Tests::test0()
 void Z3Tests::test1()
 {
     /// TODO: your code starts from here
+    expr a = getZ3Expr("a");
+    expr b = getZ3Expr("b");
+    
+    // a = 0;
+    addToSolver(a == 0);
+    // b = a + 1;
+    addToSolver(b == a + 1);
+    
+    // assert(b > 0);
+    addToSolver(b > 0);
 
+    printExprValues();
+    std::cout << solver.check() << std::endl;
 }
 
 /*
@@ -87,7 +99,30 @@ void Z3Tests::test1()
 void Z3Tests::test2()
 {
     /// TODO: your code starts from here
+    expr p = getZ3Expr("p");
+    expr q = getZ3Expr("q");
+    expr b = getZ3Expr("b");
 
+    // p = malloc;
+    addToSolver(p == getMemObjAddress("malloc"));
+    
+    // *p = 0;
+    storeValue(p, 0);
+    
+    // q = *p;
+    addToSolver(q == loadValue(p));
+    
+    // *p = 3;
+    storeValue(p, 3);
+    
+    // b = *p + 1;
+    addToSolver(b == loadValue(p) + 1);
+    
+    // assert(b > 3);
+    addToSolver(b > 3);
+
+    printExprValues();
+    std::cout << solver.check() << std::endl;
 }
 
 /*
@@ -111,7 +146,33 @@ void Z3Tests::test2()
 void Z3Tests::test3()
 {
     /// TODO: your code starts from here
+    expr p = getZ3Expr("p");
+    expr q = getZ3Expr("q");
+    expr r = getZ3Expr("r");
+    expr x = getZ3Expr("x");
 
+    // p = malloc1(..);
+    addToSolver(p == getMemObjAddress("malloc1"));
+    // q = malloc2(..);
+    addToSolver(q == getMemObjAddress("malloc2"));
+    
+    // *p = q;
+    storeValue(p, q);
+    
+    // *q = 10;
+    storeValue(q, 10);
+    
+    // r = *p;
+    addToSolver(r == loadValue(p));
+    
+    // x = *r;
+    addToSolver(x == loadValue(r));
+    
+    // assert(x==10);
+    addToSolver(x == 10);
+
+    printExprValues();
+    std::cout << solver.check() << std::endl;
 }
 
 /*
@@ -136,7 +197,38 @@ void Z3Tests::test3()
 void Z3Tests::test4()
 {
     /// TODO: your code starts from here
+    expr p = getZ3Expr("p");
+    expr x = getZ3Expr("x");
+    expr y = getZ3Expr("y");
+    expr a = getZ3Expr("a");
+    expr b = getZ3Expr("b");
 
+    // p = malloc;
+    addToSolver(p == getMemObjAddress("malloc"));
+    
+    // x = &p[0];
+    addToSolver(x == getGepObjAddress(p, 0));
+    
+    // y = &p[1];
+    addToSolver(y == getGepObjAddress(p, 1));
+    
+    // *x = 10;
+    storeValue(x, 10);
+    
+    // *y = 11;
+    storeValue(y, 11);
+    
+    // a = *x;
+    addToSolver(a == loadValue(x));
+    
+    // b = *y;
+    addToSolver(b == loadValue(y));
+    
+    // assert((a + b)>20);
+    addToSolver((a + b) > 20);
+
+    printExprValues();
+    std::cout << solver.check() << std::endl;
 }
 
 /*
@@ -157,7 +249,29 @@ int main(int argv) {
 void Z3Tests::test5()
 {
     /// TODO: your code starts from here
+    expr a = getZ3Expr("a");
+    expr b = getZ3Expr("b");   // Represents initial b
+    expr b1 = getZ3Expr("b1"); // Represents final b
+    expr argv = getZ3Expr("argv");
 
+    // a = argv + 1;
+    addToSolver(a == argv + 1);
+    
+    // b = 5; (initial)
+    addToSolver(b == 5);
+    
+    // if(a > 10) b = a;
+    // Model using ite: final_val = ite(cond, true_branch_val, false_branch_val)
+    expr b_final = ite(a > 10, a, b);
+    
+    // b1 = b; (which is b_final)
+    addToSolver(b1 == b_final);
+    
+    // assert(b1 >= 5);
+    addToSolver(b1 >= 5);
+
+    printExprValues();
+    std::cout << solver.check() << std::endl;
 }
 
 /*
@@ -179,18 +293,42 @@ int main() {
 void Z3Tests::test6()
 {
     /// TODO: your code starts from here
+    expr a = getZ3Expr("a");
+    expr b = getZ3Expr("b");
+    expr p = getZ3Expr("p");
 
+    // int *a = malloc1;
+    addToSolver(a == getMemObjAddress("malloc1"));
+    // int *b = malloc2;
+    addToSolver(b == getMemObjAddress("malloc2"));
+    
+    // *a = 5;
+    storeValue(a, 5);
+    // *b = 10;
+    storeValue(b, 10);
+    
+    // Condition: *a < *b
+    expr cond = loadValue(a) < loadValue(b);
+    
+    // if (...) p = a else p = b
+    addToSolver(p == ite(cond, a, b));
+    
+    // assert(*p == 5);
+    addToSolver(loadValue(p) == 5);
+
+    printExprValues();
+    std::cout << solver.check() << std::endl;
 }
 
 /*
  int main() {
-	int a = 1, b = 2, c = 3;
-	int d;
+    int a = 1, b = 2, c = 3;
+    int d;
   if (a > 0) {
-  	d = b + c;
+    d = b + c;
   }
   else {
-  	d = b - c;
+    d = b - c;
   }
   assert(d == 5);
  }
@@ -198,7 +336,24 @@ void Z3Tests::test6()
 void Z3Tests::test7()
 {
     /// TODO: your code starts from here
+    expr a = getZ3Expr("a");
+    expr b = getZ3Expr("b");
+    expr c = getZ3Expr("c");
+    expr d = getZ3Expr("d");
 
+    // int a = 1, b = 2, c = 3;
+    addToSolver(a == 1);
+    addToSolver(b == 2);
+    addToSolver(c == 3);
+    
+    // if (a > 0) d = b + c else d = b - c
+    addToSolver(d == ite(a > 0, b + c, b - c));
+    
+    // assert(d == 5);
+    addToSolver(d == 5);
+
+    printExprValues();
+    std::cout << solver.check() << std::endl;
 }
 
 /*
@@ -218,7 +373,28 @@ void Z3Tests::test7()
 void Z3Tests::test8()
 {
     /// TODO: your code starts from here
+    // Model 'arr' as a memory object
+    expr arr = getMemObjAddress("arr");
+    expr a = getZ3Expr("a");
+    expr p = getZ3Expr("p");
 
+    // int arr[2] = {0, 1};
+    storeValue(getGepObjAddress(arr, 0), 0);
+    storeValue(getGepObjAddress(arr, 1), 1);
+    
+    // int a = 10;
+    addToSolver(a == 10);
+    
+    // if (a > 5) p = &arr[0] else p = &arr[1]
+    expr addr0 = getGepObjAddress(arr, 0);
+    expr addr1 = getGepObjAddress(arr, 1);
+    addToSolver(p == ite(a > 5, addr0, addr1));
+    
+    // assert(*p == 0);
+    addToSolver(loadValue(p) == 0);
+
+    printExprValues();
+    std::cout << solver.check() << std::endl;
 }
 
 /*
@@ -248,7 +424,44 @@ void Z3Tests::test8()
 void Z3Tests::test9()
 {
     /// TODO: your code starts from here
+    expr p = getZ3Expr("p");
+    expr x = getZ3Expr("x");
+    expr q = getZ3Expr("q");
+    expr r = getZ3Expr("r");
+    expr y = getZ3Expr("y");
+    expr z = getZ3Expr("z");
 
+    // p = malloc1; x = malloc2;
+    addToSolver(p == getMemObjAddress("malloc1"));
+    addToSolver(x == getMemObjAddress("malloc2"));
+    
+    // *x = 5;
+    storeValue(x, 5);
+    
+    // q = &(p->f0);  (Offset 0)
+    addToSolver(q == getGepObjAddress(p, 0));
+    
+    // *q = 10;
+    storeValue(q, 10);
+    
+    // r = &(p->f1); (Offset 1, assuming fields are int sized slots in this abstract model)
+    addToSolver(r == getGepObjAddress(p, 1));
+    
+    // *r = x;
+    storeValue(r, x);
+    
+    // y = *r;
+    addToSolver(y == loadValue(r));
+    
+    // z = *q + *y;
+    // Note: y is a pointer (x), so *y means loadValue(y)
+    addToSolver(z == loadValue(q) + loadValue(y));
+    
+    // assert(z == 15);
+    addToSolver(z == 15);
+
+    printExprValues();
+    std::cout << solver.check() << std::endl;
 }
 
 /*
@@ -267,7 +480,23 @@ int main() {
 void Z3Tests::test10()
 {
     /// TODO: your code starts from here
+    expr x = getZ3Expr("x");
+    expr y = getZ3Expr("y");
+    
+    // Function foo(z) essentially returns z. 
+    // We model the return values directly.
+    
+    // y = foo(2); -> returns 2
+    addToSolver(y == 2);
+    
+    // x = foo(3); -> returns 3
+    addToSolver(x == 3);
+    
+    // assert(x == 3 && y == 2);
+    addToSolver(x == 3 && y == 2);
 
+    printExprValues();
+    std::cout << solver.check() << std::endl;
 }
 
 
